@@ -58,19 +58,35 @@ router.post('/add', upload.single('image'), asyncHandler(async (req, res, next) 
  router.put('/update/:id', upload.single('image'), asyncHandler(async (req, res) => {
 
     try {
-  
+     let name = null
+     let result = null
+     let secure_url=null
+     let public_id = null
       let imageUploads = await Image.findById(req.params.id);
-      await cloudinary.uploader.destroy(imageUploads.cloudinary_id)
+      if(typeof req.file!='undefined')
+      {
+        await cloudinary.uploader.destroy(imageUploads.cloudinary_id)
   
-      const result = await cloudinary.uploader.upload(req.file.path)
-  
-      const { name } = req.body;
-  
+        result = await cloudinary.uploader.upload(req.file.path)
+        secure_url = result.secure_url
+        public_id = result.public_id
+    
+      }
+      else
+      {
+        result=imageUploads
+      }
+      if(typeof req.body!='undefined')
+      {
+        name = req.body.name;
+      }
+      
       dataUpdate = {
         name: name || imageUploads.name,
-        image: result.secure_url || imageUploads.avatar,
-        cloudinary_id: result.public_id || user.cloudinary_id
+        image: secure_url || imageUploads.image,
+        cloudinary_id: result.public_id || imageUploads.cloudinary_id
       }
+      
       imageUploads = await Image.findByIdAndUpdate(req.params.id, dataUpdate, { new: true })
       res.status(201).json(imageUploads);
   
